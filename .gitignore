@@ -1,0 +1,10 @@
+# Object files
+*.dob
+*.exe
+*.lst
+*.map
+*.obj
+*.sym
+
+#51 arm 
+*.hex
