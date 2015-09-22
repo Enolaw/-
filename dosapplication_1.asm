@@ -1,4 +1,5 @@
 ;微机实验二 键盘的输入和数值转换
+;13通信王燕玲
 
 
 dseg segment ;定义数据段      
@@ -6,10 +7,11 @@ dseg segment ;定义数据段
 	error  db 0DH,0AH, 'input error',0DH,0AH,'$'  ;输入错误提示
 	result1 db 'change into 16 bits binary number:',0AH,0DH,'$'  ;结果显示
 	result2 db 'change into 4 bits hexadecimal number:',0AH,0DH,'$'   ;结果显示
-	over db 'over!',0AH,0DH,'$'
+	end1 db 'press any key to close the window........',0AH,0DH,'$'  ;结束提示
 	num db 4 dup(0)   ;存输入的四个字
 	num1 dw ?         ;存输16位uBCD
 	temp dw ?	  ;临时保存cx
+	choose db 'choose which you want to diplay? b is for binary,h is for hexadecimal :',0AH,0DH,'$' ;选择提示
 	dseg  ends
 	
 sseg  segment stack;定义堆栈
@@ -62,8 +64,43 @@ loop2:  mov dh,0
 	cmp bx,4
 	jnz loop2
 	mov num1,ax
-;----------------------------------------------------
-;以二进制输出
+;------------------------------------------------------
+;用户选择输出
+choose1:call newline
+	mov dl,offset choose
+	mov ah,9
+	int 21h
+	
+	mov ah,01h
+	mov al,00h
+	int 21h
+	cmp al,62h
+	jz  binary1
+	cmp al,68h
+        jnz error1
+        call hexadecimal
+	jmp next3
+	
+error1:	mov dx,offset error
+	mov ah,9
+	int 21h
+	jmp choose1
+		
+binary1: call binary
+
+next3:	call newline
+        mov dl,offset end1
+        mov ah,9
+        int 21h
+       
+	
+wait1:	mov ah,1
+	int 16h
+	jz wait1
+	mov ax,4c00h
+	int 21h
+;------------------------------------------
+binary proc near       ;子程序以二进制输出
 	call newline
 	mov dl,offset result1
 	mov ah,9
@@ -77,9 +114,13 @@ loop3:  rol bx,1  ; 把 BX 所存字符的二进制的最高位移到最低位
         mov ah,02h
         int 21h    ; 即将之前 BX 的最高位输出到屏幕
         loop loop3
-        
-;------------------------------------------------------
-;以十六进制输出        
+        ret 
+binary  endp
+             
+
+
+;-----------------------------------------
+hexadecimal proc near   ;子程序以十六进制输出
         call newline
         mov dl,offset result2
         mov ah,9
@@ -100,16 +141,8 @@ next1:	mov ah,02h
 	int 21h
 	mov cx,temp
 	loop loop4
-	
-	call newline
-       	mov dl,offset over
-       	mov ah,9
-       	int 21h
-wait1:	mov ah,1
-	int 16h
-	jz wait1
-	mov ax,4c00h
-	int 21h
+	ret            
+hexadecimal endp
 ; ----------------------------------------
  
 ; 功能：输出回车换行符，即转到新行
